@@ -20,6 +20,7 @@ import {
   isValidTask,
   sanitizeText,
 } from "@/lib/security";
+import { sendWebhookEvent } from "@/lib/webhook";
 
 interface ToastItem {
   id: string;
@@ -122,6 +123,9 @@ interface AppContextValue extends Persisted {
   resolveReport: (id: string) => void;
   login: (name: string, email: string) => void;
   logout: () => void;
+  mentorModalOpen: boolean;
+  openMentorModal: () => void;
+  closeMentorModal: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -129,7 +133,11 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Persisted>(loadState);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [mentorModalOpen, setMentorModalOpen] = useState(false);
   const timers = useRef<number[]>([]);
+
+  const openMentorModal = useCallback(() => setMentorModalOpen(true), []);
+  const closeMentorModal = useCallback(() => setMentorModalOpen(false), []);
 
   useEffect(() => {
     try {
@@ -316,6 +324,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { ...prev, recOverride: { ...prev.recOverride, [id]: !current } };
       }),
     reportBroken: (resourceId, resourceTitle, reason) => {
+      sendWebhookEvent("broken_link_report", {
+        resourceId,
+        resourceTitle,
+        reason,
+      });
       setState((prev) => ({
         ...prev,
         reports: [
@@ -340,6 +353,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setState((prev) => ({ ...prev, user: null }));
       toast("Signed out", "info");
     },
+    mentorModalOpen,
+    openMentorModal,
+    closeMentorModal,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

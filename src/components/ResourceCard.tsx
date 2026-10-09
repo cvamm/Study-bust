@@ -14,12 +14,13 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
   const saved = isBookmarked(resource.id);
 
   const isInternal =
-    resource.type === "pyq" ||
-    resource.url.startsWith("/") ||
-    resource.url.includes("example.com") ||
-    Boolean(
-      resource.sourceKind === "website" &&
-        (resource.source.includes("StudyNest") || resource.source.includes("StudyBust")),
+    resource.sourceKind !== "youtube" && (
+      resource.type === "pyq" ||
+      resource.url.startsWith("/") ||
+      Boolean(
+        resource.sourceKind === "website" &&
+          (resource.source.includes("StudyNest") || resource.source.includes("StudyBust")),
+      )
     );
 
   const contextLink = chapter
@@ -30,9 +31,11 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
 
   const targetLink =
     resource.type === "pyq"
-      ? chapter
-        ? `/subjects/${subject?.id}/${chapter.id}`
-        : `/subjects/${subject?.id ?? resource.subjectId}?section=pyqs`
+      ? resource.url.startsWith("/")
+        ? resource.url
+        : chapter
+          ? `/subjects/${subject?.id}/${chapter.id}#chapter-pyqs`
+          : `/subjects/${subject?.id ?? resource.subjectId}?section=pyqs`
       : resource.url.startsWith("/")
         ? resource.url
         : contextLink;
@@ -76,9 +79,34 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
 
       {/* title */}
       <h3 className="relative mt-3 font-display text-[15px] font-bold leading-snug text-navy-900">
-        <Link to={contextLink} className="line-clamp-2 transition-colors hover:text-navy-600 focus-ring rounded-sm">
-          {resource.title}
-        </Link>
+        {resource.sourceKind === "youtube" ? (
+          <a
+            href={resource.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => addRecent(resource.id)}
+            className="group/title line-clamp-2 transition-colors hover:text-rose-600 focus-ring rounded-sm inline-flex items-center gap-1.5"
+            title="Watch video on YouTube (opens in new tab)"
+          >
+            <span>{resource.title}</span>
+            <ArrowGlyph />
+          </a>
+        ) : isInternal ? (
+          <Link to={targetLink} className="line-clamp-2 transition-colors hover:text-navy-600 focus-ring rounded-sm">
+            {resource.title}
+          </Link>
+        ) : (
+          <a
+            href={resource.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => addRecent(resource.id)}
+            className="line-clamp-2 transition-colors hover:text-navy-600 focus-ring rounded-sm inline-flex items-center gap-1.5"
+          >
+            <span>{resource.title}</span>
+            <ArrowGlyph />
+          </a>
+        )}
       </h3>
 
       {/* source */}
@@ -91,7 +119,19 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
         >
           {resource.sourceKind === "youtube" ? <PlayGlyph /> : <Globe2 className="h-3 w-3" />}
         </span>
-        <span className="truncate text-xs font-bold text-navy-800">{resource.source}</span>
+        {resource.sourceKind === "youtube" ? (
+          <a
+            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(resource.source + " class 12")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="truncate text-xs font-bold text-navy-800 transition-colors hover:text-rose-600 hover:underline"
+            title={`Search ${resource.source} on YouTube`}
+          >
+            {resource.source}
+          </a>
+        ) : (
+          <span className="truncate text-xs font-bold text-navy-800">{resource.source}</span>
+        )}
         <span className="text-[11px] font-semibold text-navy-300">
           · {resource.sourceKind === "youtube" ? "YouTube" : "Website"}
         </span>
@@ -102,10 +142,19 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
 
       {/* meta */}
       <div className="relative mb-4 mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-semibold text-navy-400">
-        <span className="inline-flex max-w-full items-center gap-1 truncate rounded-md bg-navy-50 px-1.5 py-0.5 font-bold text-navy-600">
-          {subject?.short}
-          {chapter ? ` · ${chapter.name}` : " · Full subject"}
-        </span>
+        {chapter ? (
+          <Link
+            to={contextLink}
+            className="inline-flex max-w-full items-center gap-1 truncate rounded-md bg-navy-50 px-1.5 py-0.5 font-bold text-navy-600 transition-colors hover:bg-navy-100 hover:text-navy-900"
+            title={`View ${chapter.name} chapter details`}
+          >
+            {subject?.short} · {chapter.name}
+          </Link>
+        ) : (
+          <span className="inline-flex max-w-full items-center gap-1 truncate rounded-md bg-navy-50 px-1.5 py-0.5 font-bold text-navy-600">
+            {subject?.short ?? "Class 12"} · Full subject
+          </span>
+        )}
         <span className="inline-flex items-center gap-1">{resource.language}</span>
         {resource.duration ? (
           <span className="inline-flex items-center gap-1">
@@ -146,12 +195,24 @@ export default function ResourceCard({ resource }: { resource: Resource }) {
             className="focus-ring group/open inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-b from-navy-800 to-navy-950 px-3.5 py-2 text-xs font-extrabold text-white transition-all duration-200 hover:from-navy-700 hover:to-navy-900 active:scale-[.97]"
           >
             {resource.type === "pyq" ? (
-              chapter ? "Chapter PYQs" : "Show Chapters & PYQs"
+              chapter ? "Practice Chapter PYQs" : "Explore PYQ Bank"
             ) : (
               "Open Resource"
             )}
             <ArrowGlyph />
           </Link>
+        ) : resource.sourceKind === "youtube" ? (
+          <a
+            href={resource.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => addRecent(resource.id)}
+            className="focus-ring group/open inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-b from-rose-600 to-rose-700 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition-all duration-200 hover:from-rose-500 hover:to-rose-600 active:scale-[.97]"
+          >
+            <PlayGlyph />
+            Watch on YouTube
+            <ArrowGlyph />
+          </a>
         ) : (
           <a
             href={resource.url}

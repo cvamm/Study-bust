@@ -29,6 +29,7 @@ import Logo from "@/components/Logo";
 import { useApp } from "@/context/AppContext";
 import { cn } from "@/lib/utils";
 import { getMentorEmail, sanitizeText } from "@/lib/security";
+import { sendWebhookEvent } from "@/lib/webhook";
 
 const NAV_ITEMS = [
   { to: "/", label: "Home", end: true },
@@ -73,7 +74,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export default function Layout() {
-  const { user, logout, bookmarks, toasts, dismissToast } = useApp();
+  const { user, logout, bookmarks, toasts, dismissToast, mentorModalOpen, openMentorModal, closeMentorModal } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
   const [notifsViewed, setNotifsViewed] = useState(() => {
@@ -171,6 +172,17 @@ export default function Layout() {
                 </>
               ) : null}
             </div>
+
+            {/* 1-on-1 Mentor CTA */}
+            <button
+              type="button"
+              onClick={openMentorModal}
+              className="focus-ring hidden items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-3 py-1.5 text-xs font-bold text-navy-900 transition-all hover:bg-gold-400/20 sm:inline-flex"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-gold-500" />
+              <span>Mentor Session</span>
+              <span className="rounded-full bg-gold-400/30 px-1.5 py-0.2 text-[10px] font-extrabold text-navy-950">₹100</span>
+            </button>
 
             {/* bookmarks */}
             <Link
@@ -282,9 +294,17 @@ export default function Layout() {
                     <UserRound className="h-4 w-4" /> Sign in
                   </Link>
                 )}
-                <Link to="/dashboard?tab=bookmarks" className="btn-ghost">
-                  <Bookmark className="h-4 w-4" /> Saved ({bookmarks.length})
-                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    openMentorModal();
+                  }}
+                  className="btn-gold mt-3 flex w-full items-center justify-center gap-2 py-2.5 text-xs font-bold"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Book Mentor Session (₹100)</span>
+                </button>
               </div>
             </div>
           </>
@@ -296,6 +316,9 @@ export default function Layout() {
       </main>
 
       <Footer />
+
+      {/* Global Mentor Session Modal */}
+      <MentorModal isOpen={mentorModalOpen} onClose={closeMentorModal} />
 
       {/* Floating Back to Top Button */}
       {showBackToTop && (
@@ -447,12 +470,11 @@ export default function Layout() {
 }
 
 function Footer() {
-  const { toast } = useApp();
+  const { toast, openMentorModal } = useApp();
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const [mentorOpen, setMentorOpen] = useState(false);
 
-  const subscribe = (e: FormEvent) => {
+  const subscribe = async (e: FormEvent) => {
     e.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
       toast("Enter a valid email to subscribe", "danger");
@@ -467,6 +489,11 @@ function Footer() {
     } catch {
       // ignore storage errors
     }
+
+    sendWebhookEvent("newsletter_subscription", {
+      email: email.trim(),
+    });
+
     setEmail("");
     setSubscribed(true);
     toast("Subscribed! We'll alert you on major exam & board updates.");
@@ -481,7 +508,7 @@ function Footer() {
     {
       label: "Mentor session with me",
       badge: "₹100",
-      onClick: () => setMentorOpen(true),
+      onClick: openMentorModal,
     },
   ];
   const subjects: FooterLinkItem[] = [
@@ -503,81 +530,76 @@ function Footer() {
   ];
 
   return (
-    <>
-      <footer className="relative mt-auto overflow-hidden bg-navy-950 text-navy-200">
-        <div className="bg-hero-grid absolute inset-0" aria-hidden="true" />
-        <p
-          className="text-outline-light pointer-events-none absolute -bottom-10 left-1/2 w-full -translate-x-1/2 select-none whitespace-nowrap text-center font-display text-[9rem] font-extrabold leading-none tracking-tight lg:text-[12rem]"
-          aria-hidden="true"
-        >
-          STUDYBUST 12
-        </p>
+    <footer className="relative mt-auto overflow-hidden bg-navy-950 text-navy-200">
+      <div className="bg-hero-grid absolute inset-0" aria-hidden="true" />
+      <p
+        className="text-outline-light pointer-events-none absolute -bottom-10 left-1/2 w-full -translate-x-1/2 select-none whitespace-nowrap text-center font-display text-[9rem] font-extrabold leading-none tracking-tight lg:text-[12rem]"
+        aria-hidden="true"
+      >
+        STUDYBUST 12
+      </p>
 
-        <div className="container-x relative grid grid-cols-1 gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:py-16">
-          <div>
-            <Link to="/" className="focus-ring inline-block rounded-lg">
-              <Logo dark size="lg" />
-            </Link>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-navy-300">
-              Lectures, notes, PYQs, sample papers and revision material for CBSE Class 12 —
-              aggregated from across the web and organised by subject and chapter.
-            </p>
+      <div className="container-x relative grid grid-cols-1 gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:py-16">
+        <div>
+          <Link to="/" className="focus-ring inline-block rounded-lg">
+            <Logo dark size="lg" />
+          </Link>
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-navy-300">
+            Lectures, notes, PYQs, sample papers and revision material for CBSE Class 12 —
+            aggregated from across the web and organised by subject and chapter.
+          </p>
 
-            <form onSubmit={subscribe} className="mt-6 max-w-sm">
-              <p className="text-[10.5px] font-extrabold uppercase tracking-[0.16em] text-gold-300">New resources & exam updates</p>
-              <div className="mt-2.5 flex gap-2">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@school.in"
-                  aria-label="Email for updates"
-                  className="w-full rounded-lg border border-navy-700 bg-navy-900/80 px-3.5 py-2.5 text-sm font-semibold text-white placeholder:text-navy-400 focus:border-gold-400/60 focus:outline-none focus:ring-2 focus:ring-navy-800"
-                />
-                <button type="submit" className="focus-ring btn-gold shrink-0 px-4" title="Subscribe to updates">
-                  {subscribed ? <Check className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
-                </button>
-              </div>
-              {subscribed ? (
-                <p className="mt-1.5 text-[11px] font-semibold text-emerald-400">
-                  ✓ Subscribed! You will receive board paper & revision alerts.
-                </p>
-              ) : null}
-            </form>
-
-            <div className="mt-6 inline-flex items-start gap-2 rounded-lg border border-navy-800 bg-navy-900/80 px-3.5 py-2.5">
-              <p className="text-[11px] font-semibold leading-relaxed text-navy-300">
-                <span className="font-extrabold text-gold-300">Demo notice:</span> the directory currently
-                holds sample data. External links open official sites or topic searches until curation is done.
+          <form onSubmit={subscribe} className="mt-6 max-w-sm">
+            <p className="text-[10.5px] font-extrabold uppercase tracking-[0.16em] text-gold-300">New resources & exam updates</p>
+            <div className="mt-2.5 flex gap-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com (alerts coming soon)"
+                aria-label="Email for updates"
+                className="w-full rounded-lg border border-navy-700 bg-navy-900/80 px-3.5 py-2.5 text-sm font-semibold text-white placeholder:text-navy-400 focus:border-gold-400/60 focus:outline-none focus:ring-2 focus:ring-navy-800"
+              />
+              <button type="submit" className="focus-ring btn-gold shrink-0 px-4" title="Notify me when ready">
+                {subscribed ? <Check className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+              </button>
+            </div>
+            {subscribed ? (
+              <p className="mt-1.5 text-[11px] font-semibold text-emerald-400">
+                ✓ Noted! Real email alerts are coming soon — your address is saved locally for now.
               </p>
-            </div>
-          </div>
-          <FooterCol title="Explore" links={explore} />
-          <FooterCol title="Popular subjects" links={subjects} />
-          <FooterCol title="Quick resources" links={quick} />
-        </div>
-        <div className="relative border-t border-navy-800/80">
-          <div className="container-x flex flex-col items-center justify-between gap-3 py-5 text-xs font-semibold text-navy-400 md:flex-row">
-            <p>© 2026 StudyBust 12. Built for CBSE Class 12 students.</p>
-            <div className="flex flex-wrap items-center justify-center gap-2 text-navy-300">
-              <span>Developed by <strong className="font-bold text-white">Shivam Shukla</strong></span>
-              <span className="text-navy-600">|</span>
-              <a
-                href="mailto:cvamm69@gmail.com"
-                className="inline-flex items-center gap-1.5 text-gold-300 transition-colors hover:text-gold-200 hover:underline"
-              >
-                <Mail className="h-3.5 w-3.5" />
-                <span>cvamm69@gmail.com</span>
-              </a>
-            </div>
-            <p>Independent study tool — not affiliated with CBSE or NCERT.</p>
-          </div>
-        </div>
-      </footer>
+            ) : null}
+          </form>
 
-      {/* Mentor Session Modal */}
-      <MentorModal isOpen={mentorOpen} onClose={() => setMentorOpen(false)} />
-    </>
+          <div className="mt-6 inline-flex items-start gap-2 rounded-lg border border-navy-800 bg-navy-900/80 px-3.5 py-2.5">
+            <p className="text-[11px] font-semibold leading-relaxed text-navy-300">
+              <span className="font-extrabold text-gold-300">Demo notice:</span> the directory currently
+              holds sample data. External links open official sites or topic searches until curation is done.
+            </p>
+          </div>
+        </div>
+        <FooterCol title="Explore" links={explore} />
+        <FooterCol title="Popular subjects" links={subjects} />
+        <FooterCol title="Quick resources" links={quick} />
+      </div>
+      <div className="relative border-t border-navy-800/80">
+        <div className="container-x flex flex-col items-center justify-between gap-3 py-5 text-xs font-semibold text-navy-400 md:flex-row">
+          <p>© 2026 StudyBust 12. Built for CBSE Class 12 students.</p>
+          <div className="flex flex-wrap items-center justify-center gap-2 text-navy-300">
+            <span>Developed by <strong className="font-bold text-white">Shivam Shukla</strong></span>
+            <span className="text-navy-600">|</span>
+            <a
+              href="mailto:cvamm69@gmail.com"
+              className="inline-flex items-center gap-1.5 text-gold-300 transition-colors hover:text-gold-200 hover:underline"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              <span>cvamm69@gmail.com</span>
+            </a>
+          </div>
+          <p>Independent study tool — not affiliated with CBSE or NCERT.</p>
+        </div>
+      </div>
+    </footer>
   );
 }
 
@@ -632,33 +654,87 @@ function MentorModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState("");
-  const [stream, setStream] = useState("Science (PCM)");
-  const [notes, setNotes] = useState("");
+  const [subject, setSubject] = useState("");
+  const [reason, setReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      if (!name) setName(user.name);
+      if (!email) setEmail(user.email);
+    }
+  }, [isOpen, user]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const cleanName = sanitizeText(name);
     const cleanEmail = sanitizeText(email);
     const cleanPhone = sanitizeText(phone);
+    const cleanSubject = sanitizeText(subject);
+    const cleanReason = sanitizeText(reason);
+
     if (!cleanName) {
       toast("Please enter your name", "danger");
       return;
     }
-    if (!cleanEmail && !cleanPhone) {
-      toast("Please enter your email or WhatsApp number", "danger");
+    if (!cleanEmail) {
+      toast("Please enter your email", "danger");
+      return;
+    }
+    if (!cleanPhone) {
+      toast("Please enter your phone number", "danger");
+      return;
+    }
+    if (!cleanSubject) {
+      toast("Please enter the subject", "danger");
+      return;
+    }
+    if (!cleanReason) {
+      toast("Please enter the reason for booking", "danger");
       return;
     }
 
-    setSubmitted(true);
-    toast("Mentorship request received! Shivam Shukla will contact you shortly to schedule your slot.", "success");
+    setIsSubmitting(true);
+    try {
+      const ok = await sendWebhookEvent("mentorship_session_booking", {
+        name: cleanName,
+        email: cleanEmail,
+        phone_no: cleanPhone,
+        phone: cleanPhone,
+        subject: cleanSubject,
+        reason: cleanReason,
+        fee: "₹100",
+        amount: 100,
+        currency: "INR",
+        session_type: "1-on-1 Mentorship (30 mins)",
+        date: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+      });
+
+      setSubmitted(true);
+      if (ok) {
+        toast("Mentorship request received! Shivam Shukla will contact you shortly to schedule your slot.", "success");
+      } else {
+        toast("Mentorship request saved! Shivam Shukla will reach out shortly.", "success");
+      }
+    } catch {
+      setSubmitted(true);
+      toast("Mentorship request saved! Shivam Shukla will reach out shortly.", "success");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    setSubmitted(false);
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-navy-950/85 backdrop-blur-md transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-navy-950/85 backdrop-blur-md transition-opacity" onClick={handleClose} />
       <div className="relative w-full max-w-lg animate-fade-up overflow-hidden rounded-2xl border border-navy-700 bg-navy-900 p-6 text-white shadow-lift sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -679,7 +755,7 @@ function MentorModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close modal"
             className="focus-ring rounded-lg p-1.5 text-navy-400 hover:bg-navy-800 hover:text-white"
           >
@@ -696,17 +772,14 @@ function MentorModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               <a
-                href={`mailto:${getMentorEmail()}?subject=Class 12 Mentorship Session (₹100)&body=Hi Shivam, I have booked a 1-on-1 mentorship session for ₹100.%0D%0AName: ${encodeURIComponent(sanitizeText(name))}%0D%0AContact: ${encodeURIComponent(sanitizeText(email || phone))}%0D%0AStream: ${encodeURIComponent(stream)}%0D%0ANotes: ${encodeURIComponent(sanitizeText(notes))}`}
+                href={`mailto:${getMentorEmail()}?subject=Class 12 Mentorship Session (₹100)&body=Hi Shivam, I have booked a 1-on-1 mentorship session for ₹100.%0D%0AName: ${encodeURIComponent(sanitizeText(name))}%0D%0AEmail: ${encodeURIComponent(sanitizeText(email))}%0D%0APhone: ${encodeURIComponent(sanitizeText(phone))}%0D%0ASubject: ${encodeURIComponent(sanitizeText(subject))}%0D%0AReason: ${encodeURIComponent(sanitizeText(reason))}`}
                 className="btn-gold text-xs"
               >
                 <Mail className="h-3.5 w-3.5" /> Email Directly
               </a>
               <button
                 type="button"
-                onClick={() => {
-                  setSubmitted(false);
-                  onClose();
-                }}
+                onClick={handleClose}
                 className="btn-ghost border border-navy-700 text-xs text-white hover:bg-navy-800"
               >
                 Close
@@ -719,25 +792,10 @@ function MentorModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
               Get direct 1-on-1 strategic guidance on CBSE Class 12 board preparations, time management, backlog clearing, and PYQ solving tactics.
             </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 text-[11px] font-semibold text-navy-200">
-              <div className="flex items-center gap-2 rounded-lg border border-navy-800 bg-navy-950/60 p-2.5">
-                <span className="text-gold-400">✦</span> 30-min live 1-on-1 call
-              </div>
-              <div className="flex items-center gap-2 rounded-lg border border-navy-800 bg-navy-950/60 p-2.5">
-                <span className="text-gold-400">✦</span> Timetable & gap analysis
-              </div>
-              <div className="flex items-center gap-2 rounded-lg border border-navy-800 bg-navy-950/60 p-2.5">
-                <span className="text-gold-400">✦</span> High-yield PYQ tactics
-              </div>
-              <div className="flex items-center gap-2 rounded-lg border border-navy-800 bg-navy-950/60 p-2.5">
-                <span className="text-gold-400">✦</span> Direct doubt resolution
-              </div>
-            </div>
-
             <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">Your Name</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">Name</label>
                   <input
                     type="text"
                     required
@@ -748,50 +806,51 @@ function MentorModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">Stream</label>
-                  <select
-                    value={stream}
-                    onChange={(e) => setStream(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-navy-700 bg-navy-950/90 px-3 py-2 text-xs font-semibold text-white focus:border-gold-400 focus:outline-none"
-                  >
-                    <option value="Science (PCM)">Science (PCM)</option>
-                    <option value="Science (PCB)">Science (PCB)</option>
-                    <option value="Commerce">Commerce</option>
-                    <option value="Humanities / Arts">Humanities / Arts</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">Email Address</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">Email</label>
                   <input
                     type="email"
+                    required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@gmail.com"
                     className="mt-1 w-full rounded-lg border border-navy-700 bg-navy-950/90 px-3 py-2 text-xs font-semibold text-white placeholder:text-navy-500 focus:border-gold-400 focus:outline-none"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">WhatsApp / Phone</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">Phone No</label>
                   <input
                     type="tel"
+                    required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 98765 43210"
                     className="mt-1 w-full rounded-lg border border-navy-700 bg-navy-950/90 px-3 py-2 text-xs font-semibold text-white placeholder:text-navy-500 focus:border-gold-400 focus:outline-none"
                   />
                 </div>
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">Subject</label>
+                  <input
+                    type="text"
+                    required
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g. Physics, Chemistry, Maths"
+                    className="mt-1 w-full rounded-lg border border-navy-700 bg-navy-950/90 px-3 py-2 text-xs font-semibold text-white placeholder:text-navy-500 focus:border-gold-400 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">What would you like help with? (Optional)</label>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-navy-300">Reason</label>
                 <textarea
-                  rows={2}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="e.g. Physics backlog strategy, Maths calculus score improvement..."
+                  rows={3}
+                  required
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="e.g. Backlog in organic chemistry, need timetable & PYQ strategy..."
                   className="mt-1 w-full rounded-lg border border-navy-700 bg-navy-950/90 px-3 py-2 text-xs font-semibold text-white placeholder:text-navy-500 focus:border-gold-400 focus:outline-none"
                 />
               </div>
@@ -800,8 +859,19 @@ function MentorModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
                 <div className="text-[11px] text-navy-300">
                   Fee: <strong className="font-extrabold text-gold-300 text-sm">₹100</strong> (pay via UPI upon slot confirmation)
                 </div>
-                <button type="submit" className="btn-gold px-5 py-2 text-xs font-extrabold">
-                  Book Session (₹100)
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn-gold flex items-center gap-2 px-5 py-2 text-xs font-extrabold disabled:opacity-60"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-navy-950 border-t-transparent" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <span>Book Session (₹100)</span>
+                  )}
                 </button>
               </div>
             </form>

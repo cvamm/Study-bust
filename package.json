@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:links": "tsx scripts/verify_links.ts"
   },
   "dependencies": {
     "clsx": "2.1.1",
@@ -23,6 +24,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.1",
     "tailwindcss": "4.1.17",
+    "tsx": "^4.23.15",
     "typescript": "5.9.3",
     "vite": "^7.3.6",
     "vite-plugin-singlefile": "2.3.0"

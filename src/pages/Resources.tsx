@@ -50,7 +50,13 @@ export default function Resources() {
     const query = filters.q.trim().toLowerCase();
     const filtered = resources.filter((r) => {
       if (filters.subject && r.subjectId !== filters.subject) return false;
-      if (filters.chapter && r.chapterId !== filters.chapter) return false;
+      if (filters.chapter) {
+        const matchesExactChapter = r.chapterId === filters.chapter;
+        const isSubjectWideMatch =
+          r.chapterId === null &&
+          (!filters.types.length || filters.types.includes(r.type));
+        if (!matchesExactChapter && !isSubjectWideMatch) return false;
+      }
       if (filters.types.length && !filters.types.includes(r.type)) return false;
       if (filters.langs.length && !filters.langs.includes(r.language)) return false;
       if (filters.diffs.length && !filters.diffs.includes(r.difficulty)) return false;

@@ -6,7 +6,8 @@ import type {
   ResourceType,
   SourceKind,
 } from "@/lib/types";
-import { subjectById } from "@/data/subjects";
+import { SUBJECTS, subjectById } from "@/data/subjects";
+import { ALL_CHAPTER_NOTES_RESOURCES } from "@/data/subjectNotes";
 
 /**
  * DEMO DIRECTORY
@@ -22,8 +23,10 @@ export const OFFICIAL_SITES = {
   examfear: "https://www.examfear.com/",
 } as const;
 
-const yt = (q: string) =>
-  `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+const yt = (q: string) => {
+  const clean = q.replace(/—/g, " ").replace(/[&|:]/g, " ").replace(/\s+/g, " ").trim();
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(clean)}`;
+};
 
 const c = (s: string, i: number) => `${s}-c${i}`;
 
@@ -68,76 +71,91 @@ const R = (
     url:
       opts.url ??
       (sourceKind === "youtube"
-        ? yt(`${title} ${short} class 12`)
-        : `https://example.com/studybust12/${subjectId}/${String(seq).padStart(3, "0")}`),
+        ? yt(`${title} ${source} ${short} class 12`)
+        : `/subjects/${subjectId}`),
     recommended: opts.recommended ?? false,
     addedAt: new Date(Date.now() - (opts.daysAgo ?? 21) * 86400000).toISOString(),
     views: opts.views ?? 9200,
   };
 };
 
-export const SEED_RESOURCES: Resource[] = [
+const BASE_RESOURCES: Resource[] = [
   /* ------------------------------ PHYSICS ------------------------------ */
   /* Chapter 1 */
   R("Electric Charges & Fields — Full Chapter One Shot", "phy", c("phy", 1), "one-shot", "Physics Wallah", "youtube", "Hinglish", "Beginner", "Revision", 325, "Coulomb's law, electric dipole, electric flux, Gauss's law and its 3 major derivations with board numericals in a single sitting.", { recommended: true, daysAgo: 12, views: 482000 }),
   R("Electric Charges & Fields — Complete Chapter Lecture Series", "phy", c("phy", 1), "detailed-lectures", "Arvind Academy", "youtube", "Hindi", "Intermediate", "Learning", 240, "Step-by-step derivation of electric field on axial & equatorial line, continuous charge distribution, and Gauss theorem applications.", { daysAgo: 30, views: 235000 }),
   R("Electric Charges & Fields — Core Derivations & Board PYQs", "phy", c("phy", 1), "yt-lectures", "Sunil Jangra Physics", "youtube", "Hinglish", "Intermediate", "Practice", 115, "Focused masterclass on the 5 guaranteed board derivations and previous 10-year question patterns.", { daysAgo: 22, views: 142000 }),
+  R("Electric Charges & Fields — ToppersCBSE Revision Notes & Derivations", "phy", c("phy", 1), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Detailed handwritten revision notes covering Coulomb's law, electric dipole derivations, electric flux, and all 3 Gauss's theorem applications.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-1-electric-charges-and-fields/", daysAgo: 5, views: 320000 }),
   /* Chapter 2 */
   R("Electrostatic Potential & Capacitance — Full Chapter One Shot", "phy", c("phy", 2), "one-shot", "Arvind Academy", "youtube", "Hindi", "Beginner", "Revision", 290, "Electric potential due to point charge & dipole, equipotential surfaces, energy stored in capacitor, and dielectric slab insertion.", { recommended: true, daysAgo: 14, views: 410000 }),
   R("Electrostatic Potential & Capacitance — Detailed Chapter Lectures", "phy", c("phy", 2), "detailed-lectures", "Unacademy Atoms", "youtube", "English", "Intermediate", "Learning", 210, "Complete conceptual breakdown of potential gradient, parallel plate capacitor, series/parallel combinations, and dielectric polarization.", { daysAgo: 38, views: 185000 }),
   R("Capacitance & Dielectrics Masterclass with Solved Numericals", "phy", c("phy", 2), "yt-lectures", "Abhishek Sahu", "youtube", "Hinglish", "Intermediate", "Practice", 135, "Dielectric constant, common potential, energy loss on sharing charges, and high-frequency board numericals.", { daysAgo: 28, views: 124000 }),
+  R("Electrostatic Potential & Capacitance — ToppersCBSE Revision Notes", "phy", c("phy", 2), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Step-by-step notes on potential due to dipole, equipotential surfaces, capacitor with dielectric, energy stored, and redistribution losses.", { recommended: true, url: "https://topperscbse.com/revision-notes/class-12-physics-notes-of-chapter-2-electrostatic-potential-and-capacitance/", daysAgo: 5, views: 295000 }),
   /* Chapter 3 */
   R("Current Electricity — Complete Chapter One Shot", "phy", c("phy", 3), "one-shot", "Physics Wallah", "youtube", "Hinglish", "Beginner", "Revision", 340, "Drift velocity, Ohm's law vector form, temperature dependence of resistance, cells in series/parallel, Kirchhoff's rules, and Wheatstone bridge.", { recommended: true, daysAgo: 10, views: 560000 }),
   R("Current Electricity — Detailed Lecture Series", "phy", c("phy", 3), "detailed-lectures", "Unacademy Atoms", "youtube", "English", "Intermediate", "Learning", 188, "Ohm's law, Kirchhoff's rules and Wheatstone bridge explained with solved board numericals.", { daysAgo: 34, views: 96000 }),
   R("Kirchhoff's Rules & Wheatstone Bridge — Circuit Solving Marathon", "phy", c("phy", 3), "yt-lectures", "Sunil Jangra Physics", "youtube", "Hindi", "Advanced", "Practice", 120, "Master Kirchhoff's loop and junction rules with step-by-step sign convention and tricky board circuit problems.", { daysAgo: 25, views: 168000 }),
+  R("Current Electricity — ToppersCBSE Handwritten Notes & Derivations", "phy", c("phy", 3), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Complete revision notes covering drift velocity, microscopic Ohm's law, cell combinations, Kirchhoff's rules, and Wheatstone bridge.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-of-chapter-3-current-electricity/", daysAgo: 5, views: 340000 }),
   /* Chapter 4 */
   R("Moving Charges & Magnetism — Full Chapter One Shot", "phy", c("phy", 4), "one-shot", "Arvind Academy", "youtube", "Hindi", "Beginner", "Revision", 310, "Oersted experiment, Biot-Savart law, circular coil magnetic field, Ampere's circuital law, solenoid, Lorentz force, and moving coil galvanometer.", { recommended: true, daysAgo: 16, views: 395000 }),
   R("Moving Charges & Magnetism — In-Depth Chapter Lectures", "phy", c("phy", 4), "detailed-lectures", "Sachin Sir Physics", "youtube", "Hinglish", "Intermediate", "Learning", 225, "Force between two parallel currents, torque on current loop, magnetic dipole moment, and galvanometer conversion to ammeter/voltmeter.", { daysAgo: 40, views: 154000 }),
   R("Moving Charges & Magnetism — Essential Derivations & Galvanometer", "phy", c("phy", 4), "yt-lectures", "Physics Wallah", "youtube", "Hinglish", "Intermediate", "Practice", 140, "Biot-Savart circular coil derivation, Ampere's law solenoid proof, and galvanometer current/voltage sensitivity numericals.", { daysAgo: 29, views: 198000 }),
+  R("Moving Charges & Magnetism — ToppersCBSE Notes & Derivations", "phy", c("phy", 4), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Biot-Savart circular loop derivation, Ampere's circuital law, force between parallel currents, and moving coil galvanometer conversion.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-notes-of-chapter-4-moving-charges-and-magnetism/", daysAgo: 5, views: 275000 }),
   /* Chapter 5 */
   R("Magnetism & Matter — Full Chapter One Shot in 90 Minutes", "phy", c("phy", 5), "one-shot", "Sunil Jangra Physics", "youtube", "Hindi", "Beginner", "Revision", 95, "Magnetic field lines, bar magnet as equivalent solenoid, magnetic dipole in uniform field, and Dia, Para & Ferromagnetism properties compared.", { recommended: true, daysAgo: 18, views: 245000 }),
   R("Magnetism and Matter — Detailed Conceptual Lectures", "phy", c("phy", 5), "detailed-lectures", "Arvind Academy", "youtube", "Hinglish", "Intermediate", "Learning", 105, "Magnetic permeability, susceptibility, Curie's law, temperature effect, and high-scoring NCERT theory questions.", { daysAgo: 42, views: 112000 }),
   R("Dia, Para & Ferromagnetic Substances — NCERT Line-by-Line & Tables", "phy", c("phy", 5), "yt-lectures", "Unacademy Atoms", "youtube", "English", "Beginner", "Learning", 75, "Comprehensive comparison table, electronic explanation of magnetic properties, and board-favourite reasoning questions.", { daysAgo: 31, views: 88000 }),
+  R("Magnetism & Matter — ToppersCBSE Revision Notes", "phy", c("phy", 5), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Concise board revision notes on bar magnet dipole, field lines, comparison of Dia, Para and Ferromagnetic substances, and Curie's law.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-of-chapter-5-magnetism-and-matter/", daysAgo: 5, views: 210000 }),
   /* Chapter 6 */
   R("Electromagnetic Induction — One Shot with Past Year Numericals", "phy", c("phy", 6), "one-shot", "Sunil Jangra Physics", "youtube", "Hindi", "Beginner", "Revision", 240, "Faraday's laws, Lenz's law, motional EMF, eddy currents, and self & mutual inductance end-to-end with past-year numericals.", { recommended: true, daysAgo: 19, views: 288000 }),
   R("Electromagnetic Induction — Complete Chapter Lecture Series", "phy", c("phy", 6), "detailed-lectures", "Physics Wallah", "youtube", "Hinglish", "Intermediate", "Learning", 195, "Derivation of motional EMF in rotating rod, mutual inductance of two coaxial solenoids, and energy stored in an inductor.", { daysAgo: 36, views: 176000 }),
   R("EMI — All Derivations & Lenz's Law Direction Questions", "phy", c("phy", 6), "yt-lectures", "Arvind Academy", "youtube", "Hinglish", "Intermediate", "Practice", 105, "Clean step-by-step derivations of self inductance, mutual inductance, and solving tricky Lenz law direction MCQs.", { daysAgo: 26, views: 135000 }),
+  R("Electromagnetic Induction — ToppersCBSE Notes & Derivations", "phy", c("phy", 6), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Faraday's laws, Lenz's law, motional EMF derivation, self and mutual inductance of solenoids, and AC generator working principles.", { recommended: true, url: "https://topperscbse.com/revision-notes/class-12-physics-notes-of-chapter-6-electromagnetic-induction/", daysAgo: 5, views: 250000 }),
   /* Chapter 7 */
   R("Alternating Current — Complete Chapter One Shot (Phasors to Transformers)", "phy", c("phy", 7), "one-shot", "Arvind Academy", "youtube", "Hindi", "Beginner", "Revision", 280, "Peak vs RMS values, AC through R, L, C, series LCR circuit phasor analysis, resonance, Q-factor, power factor, and step-up/down transformers.", { recommended: true, daysAgo: 15, views: 370000 }),
   R("Alternating Current — Detailed Series with LCR & Resonance", "phy", c("phy", 7), "detailed-lectures", "Abhishek Sahu", "youtube", "Hinglish", "Intermediate", "Learning", 175, "Derivation of RMS current, impedance triangle, resonance frequency condition, sharpness of resonance, and transformer energy losses.", { daysAgo: 39, views: 148000 }),
   R("Alternating Current — LCR Phasor Diagrams & Transformer Working", "phy", c("phy", 7), "yt-lectures", "Sunil Jangra Physics", "youtube", "Hinglish", "Intermediate", "Practice", 110, "Flawless phasor diagrams, average power, wattless current, and transformer numericals.", { daysAgo: 24, views: 119000 }),
+  R("Alternating Current — ToppersCBSE Revision Notes & Phasors", "phy", c("phy", 7), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Peak vs RMS value derivations, series LCR phasor analysis, resonance condition, power factor, and step-up/down transformer working.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-7-alternating-current/", daysAgo: 5, views: 285000 }),
   /* Chapter 8 */
   R("Electromagnetic Waves — Full Chapter One Shot in 90 Minutes", "phy", c("phy", 8), "one-shot", "Sunil Jangra Physics", "youtube", "Hindi", "Beginner", "Revision", 95, "Maxwell's displacement current formulation, properties of EM waves, transverse nature, and full EM spectrum mnemonic & applications.", { recommended: true, daysAgo: 17, views: 260000 }),
   R("Electromagnetic Waves — Detailed Lecture & NCERT Walkthrough", "phy", c("phy", 8), "detailed-lectures", "Arvind Academy", "youtube", "Hinglish", "Beginner", "Learning", 85, "Conduction vs displacement current, relation between electric and magnetic field amplitudes (c = E0/B0), and EM wave momentum & pressure.", { daysAgo: 45, views: 105000 }),
   R("EM Spectrum Mnemonic & All Uses (Radio to Gamma Rays)", "phy", c("phy", 8), "yt-lectures", "Physics Wallah", "youtube", "Hinglish", "Beginner", "Revision", 60, "Easy tricks to memorize frequency and wavelength ranges, production methods, and applications tested in CBSE Section A & B.", { daysAgo: 33, views: 140000 }),
+  R("Electromagnetic Waves — ToppersCBSE Quick Revision Notes", "phy", c("phy", 8), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Maxwell's displacement current, transverse nature of EM waves, and complete EM spectrum reference chart (frequencies, wavelengths & uses).", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-8-electromagnetic-waves/", daysAgo: 5, views: 220000 }),
   /* Chapter 9 */
   R("Ray Optics & Optical Instruments — Complete Marathon One Shot", "phy", c("phy", 9), "one-shot", "Arvind Academy", "youtube", "Hindi", "Beginner", "Revision", 360, "Spherical mirrors, total internal reflection, lens maker's formula, thin lenses in contact, prism formula, compound microscope, and astronomical telescope.", { recommended: true, daysAgo: 11, views: 610000 }),
   R("Ray Optics & Optical Instruments — Complete Chapter Playlist", "phy", c("phy", 9), "detailed-lectures", "Vedantu", "youtube", "Hinglish", "Intermediate", "Learning", 320, "Refraction, lenses and optical instruments covered lecture-by-lecture with ray diagrams.", { daysAgo: 41, views: 210000 }),
   R("Optical Instruments — Microscope & Telescope Ray Diagrams", "phy", c("phy", 9), "yt-lectures", "Sunil Jangra Physics", "youtube", "Hinglish", "Intermediate", "Practice", 130, "Master normal adjustment and distinct vision cases, ray diagrams with proper arrows, and magnifying power derivations.", { daysAgo: 27, views: 165000 }),
+  R("Ray Optics & Optical Instruments — ToppersCBSE Notes & Ray Diagrams", "phy", c("phy", 9), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Complete ray diagrams and derivations: Lens Maker's formula, refraction at spherical surfaces, prism formula, compound microscope, and telescope.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-9-ray-optics-and-optical-instruments/", daysAgo: 5, views: 390000 }),
   /* Chapter 10 */
   R("Wave Optics — Full Chapter One Shot (Huygens to Diffraction)", "phy", c("phy", 10), "one-shot", "Arvind Academy", "youtube", "Hindi", "Beginner", "Revision", 265, "Wavefronts, Huygens' principle, proof of reflection and refraction laws, coherent sources, Young's double slit experiment, fringe width, and single slit diffraction.", { recommended: true, daysAgo: 13, views: 430000 }),
   R("Wave Optics — Detailed Lecture Series with Wavefronts & Derivations", "phy", c("phy", 10), "detailed-lectures", "Unacademy Atoms", "youtube", "English", "Intermediate", "Learning", 190, "Geometric construction of planar and spherical wavefronts, mathematical derivation of YDSE fringe width, and interference vs diffraction.", { daysAgo: 37, views: 172000 }),
   R("Wave Optics — Huygens Proofs & YDSE Solved Numericals", "phy", c("phy", 10), "yt-lectures", "Physics Wallah", "youtube", "Hinglish", "Intermediate", "Practice", 125, "Snell's law and reflection proof using Huygens principle, plus intensity ratio numericals (Imax/Imin).", { daysAgo: 25, views: 153000 }),
+  R("Wave Optics — ToppersCBSE Revision Notes & Derivations", "phy", c("phy", 10), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Huygens' principle, reflection and refraction proofs, analytical fringe width derivation for YDSE, and single-slit diffraction patterns.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-10-wave-optics/", daysAgo: 5, views: 310000 }),
   /* Chapter 11 */
   R("Dual Nature of Radiation & Matter — Complete One Shot Revision", "phy", c("phy", 11), "one-shot", "Sunil Jangra Physics", "youtube", "Hindi", "Beginner", "Revision", 150, "Photoelectric effect experiments, Hertz & Lenard observations, Einstein's photoelectric equation, stopping potential graphs, and de-Broglie wavelength.", { recommended: true, daysAgo: 16, views: 310000 }),
   R("Dual Nature of Radiation and Matter — Detailed Chapter Lectures", "phy", c("phy", 11), "detailed-lectures", "Physics Wallah", "youtube", "Hinglish", "Intermediate", "Learning", 140, "Wave theory failure reasons, photon characteristics, electron de-Broglie relation (lambda = 1.227/sqrt(V) nm), and Davisson-Germer qualitative summary.", { daysAgo: 43, views: 180000 }),
   R("Photoelectric Effect Graphs & de-Broglie Numericals Masterclass", "phy", c("phy", 11), "yt-lectures", "Arvind Academy", "youtube", "Hinglish", "Intermediate", "Practice", 95, "Master all 6 standard CBSE photoelectric graphs (intensity vs current, frequency vs stopping potential) and work function calculations.", { daysAgo: 32, views: 138000 }),
+  R("Dual Nature of Radiation & Matter — ToppersCBSE Revision Notes", "phy", c("phy", 11), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Photoelectric effect experimental observations, Einstein's equation, stopping potential graphs, and electron de-Broglie wavelength formula.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-11-dual-nature-of-radiation-and-matter/", daysAgo: 5, views: 260000 }),
   /* Chapter 12 */
   R("Atoms — Complete Chapter One Shot (Rutherford, Bohr & Spectral Series)", "phy", c("phy", 12), "one-shot", "Arvind Academy", "youtube", "Hindi", "Beginner", "Revision", 165, "Alpha-particle scattering, distance of closest approach, Rutherford model limitations, Bohr postulates, radius/energy formulas, and hydrogen line spectrum.", { recommended: true, daysAgo: 14, views: 295000 }),
   R("Atoms — Detailed Lecture Series & Derivations", "phy", c("phy", 12), "detailed-lectures", "Physics Wallah", "youtube", "Hinglish", "Intermediate", "Learning", 135, "Step-by-step derivation of radius of nth orbit (r_n propto n^2) and total energy of electron (E_n = -13.6/n^2 eV), with de-Broglie's explanation.", { daysAgo: 46, views: 162000 }),
   R("Hydrogen Spectral Series (Lyman, Balmer, Paschen) & Rydberg Formula", "phy", c("phy", 12), "yt-lectures", "Sunil Jangra Physics", "youtube", "Hinglish", "Intermediate", "Practice", 85, "Transitions, shortest & longest wavelength calculations in series, energy level diagrams, and board numerical shortcuts.", { daysAgo: 29, views: 120000 }),
+  R("Atoms — ToppersCBSE Revision Notes & Bohr Derivations", "phy", c("phy", 12), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Alpha-particle scattering, distance of closest approach, Bohr's postulates, orbit radius & energy derivations, and hydrogen emission series.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-12-atoms/", daysAgo: 5, views: 245000 }),
   /* Chapter 13 */
   R("Nuclei — Full Chapter One Shot (Rationalised Syllabus)", "phy", c("phy", 13), "one-shot", "Sunil Jangra Physics", "youtube", "Hindi", "Beginner", "Revision", 130, "Nuclear size and density (constant independent of mass number), mass defect, binding energy per nucleon curve and its significance, nuclear fission, and fusion.", { recommended: true, daysAgo: 15, views: 275000 }),
   R("Nuclei — Detailed Chapter Lectures with Mass Defect Numericals", "phy", c("phy", 13), "detailed-lectures", "Arvind Academy", "youtube", "Hinglish", "Intermediate", "Learning", 110, "Detailed analysis of nuclear forces properties (short-range, non-central, charge-independent, saturation), mass defect delta m, Q-value of nuclear reactions.", { daysAgo: 44, views: 139000 }),
   R("Binding Energy Curve & Nuclear Energy Numericals Bank", "phy", c("phy", 13), "yt-lectures", "Abhishek Sahu", "youtube", "Hinglish", "Intermediate", "Practice", 75, "Step-by-step mass-energy equivalence (E = delta m * 931.5 MeV) numericals, binding energy per nucleon curve features, and fission/fusion energy release reasons.", { daysAgo: 31, views: 98000 }),
+  R("Nuclei — ToppersCBSE Revision Notes (Rationalised Syllabus)", "phy", c("phy", 13), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Nuclear size and constant density, mass defect, binding energy per nucleon curve features, nuclear forces, and fission/fusion energy release.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-13-nuclei/", daysAgo: 5, views: 230000 }),
   /* Chapter 14 */
   R("Semiconductor Electronics — Complete Chapter One Shot", "phy", c("phy", 14), "one-shot", "Arvind Academy", "youtube", "Hindi", "Beginner", "Revision", 250, "Energy bands in solids, intrinsic vs extrinsic semiconductors (p-type and n-type), p-n junction formation, forward/reverse bias I-V curves, half-wave & full-wave rectifiers.", { recommended: true, daysAgo: 12, views: 510000 }),
   R("Semiconductor Electronics — Comprehensive Chapter Lectures", "phy", c("phy", 14), "detailed-lectures", "Physics Wallah", "youtube", "Hinglish", "Intermediate", "Learning", 200, "Energy band diagrams, depletion layer and barrier potential explanation, diode dynamic resistance calculation, and full working of bridge/center-tapped rectifiers.", { daysAgo: 38, views: 220000 }),
   R("p-n Junction Diode Characteristics & Rectifier Circuits", "phy", c("phy", 14), "yt-lectures", "Sachin Sir Physics", "youtube", "Hinglish", "Intermediate", "Practice", 120, "Drawing clean board diagrams of half-wave and full-wave rectifiers with input/output waveforms, knee voltage, breakdown voltage, and circuit troubleshooting questions.", { daysAgo: 26, views: 165000 }),
+  R("Semiconductor Electronics — ToppersCBSE Revision Notes & Circuits", "phy", c("phy", 14), "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Energy band theory, p-n junction forward/reverse bias, dynamic resistance, and half-wave/full-wave rectifier working with input-output waveforms.", { recommended: true, url: "https://topperscbse.com/revision-notes/cbse-class-12-physics-notes-chapter-14-semiconductor-devices/", daysAgo: 5, views: 360000 }),
   /* Full-Subject Material */
   R("Class 12 Physics 700 PYQs Chapterwise Bank", "phy", null, "pyq", "StudyNest Chapterwise PYQs", "website", "English", "Advanced", "Practice", 360, "Complete 700-question repository across all 14 chapters (50 Qs/chapter: MCQs, Assertion-Reason, Short & Long Answers with step-by-step marking schemes). Available chapterwise inside each chapter.", { recommended: true, url: "/subjects/phy?section=pyqs", daysAgo: 1, views: 485000 }),
+  R("CBSE Class 12 Physics Notes All Chapters Portal", "phy", null, "notes", "ToppersCBSE", "website", "English", "Intermediate", "Revision", null, "Full syllabus compilation of CBSE Class 12 Physics revision notes with derivations, formulas, diagrams, and question sets for all chapters.", { recommended: true, url: "https://topperscbse.com/cbse-class-12th-notes/class-12-physics-notes/", daysAgo: 5, views: 450000 }),
   R("CBSE Class 12 Physics Sample Paper 2025–26 + Marking Scheme", "phy", null, "sample-papers", "CBSE Academic", "website", "English", "Advanced", "Practice", 180, "Official latest sample question paper with the full marking scheme released by CBSE.", { recommended: true, url: OFFICIAL_SITES.cbse, daysAgo: 5, views: 540000 }),
-  R("Full Syllabus Mock Test 1 — Physics (Board Pattern)", "phy", null, "mock-tests", "StudyBust Mocks", "website", "English", "Advanced", "Practice", 180, "3-hour board-pattern mock with section-wise timing targets and an answer key."),
+  R("Full Syllabus Mock Test 1 — Physics (Board Pattern)", "phy", null, "mock-tests", "StudyBust Mocks", "website", "English", "Advanced", "Practice", 180, "3-hour board-pattern mock with section-wise timing targets and an answer key.", { recommended: true, url: OFFICIAL_SITES.cbse, daysAgo: 4, views: 320000 }),
 
   /* ----------------------------- CHEMISTRY ----------------------------- */
   /* Chapter 1 */
@@ -345,7 +363,7 @@ export const SEED_RESOURCES: Resource[] = [
   R("Memories of Childhood — NCERT Line-by-Line & Theme Breakdown", "eng", c("eng", 14), "detailed-lectures", "Apni Kaksha", "youtube", "English", "Beginner", "Learning", 40, "Comprehensive reading of Vistas text with vocabulary, literary devices and value-based answer framing.", { daysAgo: 38, views: 165000 }),
   R("Memories of Childhood — Important RTC Extracts & Board Questions", "eng", c("eng", 14), "yt-lectures", "Magnet Brains", "youtube", "Hinglish", "Intermediate", "Practice", 35, "Most expected Reference-to-Context (RTC) extracts and 5-mark long answer questions for Memories of Childhood.", { daysAgo: 25, views: 120000 }),
   /* Full-Subject Material */
-  R("Class 12 English Core PYQs 2015–2025 — Chapterwise Bank", "eng", null, "pyq", "StudyBust PYQ Bank", "website", "English", "Intermediate", "Practice", null, "Literature questions tagged per chapter plus past writing-section prompts.", { recommended: true, daysAgo: 9, views: 128000 }),
+  R("Class 12 English Core PYQs 2015–2025 — Chapterwise Bank", "eng", null, "pyq", "StudyBust PYQ Bank", "website", "English", "Intermediate", "Practice", null, "Literature questions tagged per chapter plus past writing-section prompts.", { recommended: true, url: "/subjects/eng?section=pyqs", daysAgo: 9, views: 128000 }),
   R("CBSE Class 12 English Sample Paper 2025–26", "eng", null, "sample-papers", "CBSE Academic", "website", "English", "Intermediate", "Practice", 180, "Official sample paper — check how unseen passages and writing tasks are framed.", { recommended: true, url: OFFICIAL_SITES.cbse, daysAgo: 5, views: 205000 }),
 
   /* ----------------------------- ACCOUNTANCY ----------------------------- */
@@ -801,4 +819,38 @@ export const SEED_RESOURCES: Resource[] = [
   /* Full-Subject Material */
   R("Class 12 Sociology PYQs 2015–2025", "soc", null, "pyq", "StudyBust PYQ Bank", "website", "English", "Intermediate", "Practice", null, "650 Master chapterwise questions across all 13 chapters with verified marking schemes and MCQ practice.", { recommended: true, url: "/subjects/soc?section=pyqs", daysAgo: 15, views: 24000 }),
   R("CBSE Class 12 Sociology Sample Paper 2025–26", "soc", null, "sample-papers", "CBSE Academic", "website", "English", "Intermediate", "Practice", 180, "Official sample paper with case-based questions.", { recommended: true, url: OFFICIAL_SITES.cbse, daysAgo: 5, views: 31000 }),
+];
+
+/**
+ * Official chapterwise PYQ practice banks for every chapter across all 15 subjects.
+ * Enables chapter-filtered PYQ queries in Resources directory and Chapter detail views.
+ */
+export const CHAPTER_PYQ_RESOURCES: Resource[] = SUBJECTS.flatMap((s) =>
+  s.chapters.map((ch, idx) => {
+    seq += 1;
+    return {
+      id: `pyq-${s.id}-c${idx + 1}`,
+      title: `${ch.name} — CBSE Board PYQ Bank (50 Questions)`,
+      subjectId: s.id,
+      chapterId: ch.id,
+      type: "pyq" as ResourceType,
+      source: "StudyNest Chapterwise PYQs",
+      sourceKind: "website" as SourceKind,
+      language: "English" as Language,
+      difficulty: "Advanced" as Difficulty,
+      goal: "Practice" as Goal,
+      duration: 120,
+      description: `50 authentic CBSE Class 12 board previous year questions for ${ch.name} with step-by-step marking schemes, MCQs, Assertion-Reason, and descriptive solutions.`,
+      url: `/subjects/${s.id}/${ch.id}#chapter-pyqs`,
+      recommended: true,
+      addedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+      views: 125000 + ((idx * 3749) % 75000),
+    };
+  })
+);
+
+export const SEED_RESOURCES: Resource[] = [
+  ...BASE_RESOURCES,
+  ...CHAPTER_PYQ_RESOURCES,
+  ...ALL_CHAPTER_NOTES_RESOURCES,
 ];

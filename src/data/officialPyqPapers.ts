@@ -5118,7 +5118,14 @@ export const OFFICIAL_PYQ_ARCHIVES: SubjectPyqArchive[] = [
 ];
 
 export function getOfficialPyqArchive(subjectId: string): SubjectPyqArchive | undefined {
-  return OFFICIAL_PYQ_ARCHIVES.find((a) => a.subjectId === subjectId);
+  const archive = OFFICIAL_PYQ_ARCHIVES.find((a) => a.subjectId === subjectId);
+  if (!archive && (import.meta as { env?: { DEV?: boolean } }).env?.DEV) {
+    console.warn(
+      `[StudyNest] No official PYQ archive found for subjectId: "${subjectId}". ` +
+      `Valid IDs are: ${OFFICIAL_PYQ_ARCHIVES.map((a) => a.subjectId).join(", ")}`
+    );
+  }
+  return archive;
 }
 
 export const ALL_ARCHIVE_YEARS: number[] = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015];

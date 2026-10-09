@@ -241,14 +241,23 @@ function Overview() {
                         <Icon className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <a
-                          href={r.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="focus-ring block truncate rounded-sm text-[13px] font-bold text-navy-900 hover:text-navy-600"
-                        >
-                          {r.title}
-                        </a>
+                        {r.url.startsWith("/") ? (
+                          <Link
+                            to={r.url}
+                            className="focus-ring block truncate rounded-sm text-[13px] font-bold text-navy-900 hover:text-navy-600"
+                          >
+                            {r.title}
+                          </Link>
+                        ) : (
+                          <a
+                            href={r.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="focus-ring block truncate rounded-sm text-[13px] font-bold text-navy-900 hover:text-navy-600"
+                          >
+                            {r.title}
+                          </a>
+                        )}
                         <p className="truncate text-[11px] font-semibold text-navy-400">
                           {subject?.short}
                           {chapter ? ` · ${chapter.name}` : ""} · {r.source}
@@ -359,7 +368,14 @@ function Planner() {
       setError("Give the task a title — e.g. “Solve 20 PYQs from Integrals”");
       return;
     }
-    addTask({ title: title.trim(), subjectId, date: date || todayISO(), priority });
+    const chosenDate = date || todayISO();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    if (new Date(chosenDate) < oneYearAgo) {
+      setError("Date can’t be more than 1 year in the past — pick a recent or upcoming date.");
+      return;
+    }
+    addTask({ title: title.trim(), subjectId, date: chosenDate, priority });
     setTitle("");
     setError("");
   };
@@ -414,7 +430,14 @@ function Planner() {
               <label htmlFor="task-date" className="mb-1.5 block text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-navy-400">
                 Date
               </label>
-              <input id="task-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-base" />
+              <input
+                id="task-date"
+                type="date"
+                value={date}
+                min={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split("T")[0]; })()}
+                onChange={(e) => { setDate(e.target.value); if (error) setError(""); }}
+                className="input-base"
+              />
             </div>
             <div>
               <label htmlFor="task-priority" className="mb-1.5 block text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-navy-400">

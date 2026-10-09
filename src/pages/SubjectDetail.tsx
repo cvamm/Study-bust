@@ -5,13 +5,16 @@ import {
   Check,
   CheckCircle2,
   ChevronLeft,
+  ChevronRight,
   Circle,
   Clock,
+  ExternalLink,
   FileArchive,
   FileCheck2,
   Layers,
   Library,
   Loader2,
+  NotebookPen,
   Search,
   Sparkles,
   Video,
@@ -27,10 +30,12 @@ import SubjectPyqArchiveSection from "@/components/SubjectPyqArchiveSection";
 import { useApp } from "@/context/AppContext";
 import { hasPyqData, subjectById } from "@/data/subjects";
 import { getOfficialPyqArchive } from "@/data/officialPyqPapers";
+import { getSubjectNotesCatalog } from "@/data/subjectNotes";
 import type { ResourceType } from "@/lib/types";
 import { cn, fmtDuration, RESOURCE_TYPES, subjectIcon, TONES } from "@/lib/utils";
 
-/* ── Lazy-loaded PYQ sections (code-split ~8 MB of question data) ── */
+/* ── Lazy-loaded Notes & PYQ sections (code-split) ── */
+const SubjectNotesSection = lazy(() => import("@/components/SubjectNotesSection"));
 const PhysicsPyqSection = lazy(() => import("@/components/PhysicsPyqSection"));
 const ChemistryPyqSection = lazy(() => import("@/components/ChemistryPyqSection"));
 const BiologyPyqSection = lazy(() => import("@/components/BiologyPyqSection"));
@@ -254,6 +259,17 @@ export function SubjectPage() {
                 </span>
               </button>
             ) : null}
+            <button
+              type="button"
+              onClick={() => scrollToSection("notes")}
+              className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-gradient-to-r from-emerald-50 to-teal-100/80 px-3.5 py-1.5 text-xs font-extrabold text-emerald-950 shadow-sm transition-all hover:border-emerald-400 hover:from-emerald-100 hover:to-teal-200 active:scale-[.98]"
+            >
+              <NotebookPen className="h-3.5 w-3.5 text-emerald-700" />
+              Chapterwise Revision Notes ({subject.chapters.length} Chapters)
+              <span className="rounded-full bg-emerald-200 px-1.5 py-0.2 text-[10px] font-extrabold text-emerald-800">
+                {subject.id === "phy" || subject.id === "chem" || subject.id === "bio" ? "ToppersCBSE" : "CBSE / NCERT"}
+              </span>
+            </button>
             {hasPyqData(subject.id) ? (
               <button
                 type="button"
@@ -597,6 +613,13 @@ export function SubjectPage() {
         </section>
       ) : null}
 
+      {/* ===================== CHAPTERWISE NOTES SECTION (ALL SUBJECTS) ===================== */}
+      <ErrorBoundary>
+        <Suspense fallback={<PyqLoadingFallback />}>
+          <SubjectNotesSection subjectId={subject.id} />
+        </Suspense>
+      </ErrorBoundary>
+
       {/* ===================== CHAPTERWISE BOARD PYQ BANK ===================== */}
       {hasPyqData(subject.id) ? (
         <section id="pyqs" className="border-t border-inkline bg-slate-50/50 py-14 lg:py-20">
@@ -742,6 +765,11 @@ export function ChapterPage() {
   const lectureGroups = groups.filter((g) => lectureGroupIds.has(g.type.id));
   const otherGroups = groups.filter((g) => !lectureGroupIds.has(g.type.id));
   const hasPyq = hasPyqData(subject.id);
+  const subjectNotesCatalog = useMemo(() => getSubjectNotesCatalog(subject.id), [subject.id]);
+  const chapterNote = useMemo(
+    () => subjectNotesCatalog?.chapters.find((c) => c.chapterId === chapter.id || c.chapterNum === index + 1),
+    [subjectNotesCatalog, chapter.id, index]
+  );
 
   return (
     <>
@@ -800,6 +828,18 @@ export function ChapterPage() {
                   <FileCheck2 className="h-4 w-4 text-indigo-600" />
                   Chapter PYQs (50 Qs)
                 </button>
+              ) : null}
+              {chapterNote ? (
+                <a
+                  href={chapterNote.notesUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="focus-ring inline-flex w-fit shrink-0 items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50/90 px-3.5 py-2.5 text-xs font-extrabold text-emerald-950 shadow-sm transition-all hover:bg-emerald-100 hover:text-emerald-900 active:scale-[.98]"
+                >
+                  <NotebookPen className="h-4 w-4 text-emerald-600" />
+                  {chapterNote.source.includes("Toppers") ? "ToppersCBSE Notes" : "Chapter Revision Notes"}
+                  <ExternalLink className="h-3 w-3 text-emerald-500" />
+                </a>
               ) : null}
               <Link
                 to={`/subjects/${subject.id}?section=lectures`}
